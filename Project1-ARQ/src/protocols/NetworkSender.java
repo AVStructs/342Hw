@@ -129,4 +129,7 @@ public class NetworkSender {
         return packets;
     }
 
+    public void sendPacket(BISYNCPacket packet) {
+
+    }
 }

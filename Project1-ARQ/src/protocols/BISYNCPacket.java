@@ -15,6 +15,7 @@ public class BISYNCPacket {
     private byte[] trailer;
     public int checksum;
     public boolean isValid; // whether this is a valid BISYNCPacket
+    private char sequenceNumber;
 
     // encapsulation
     public BISYNCPacket(byte[] data) {
@@ -197,5 +198,13 @@ public class BISYNCPacket {
 
     public boolean isValid() {
         return calculateChecksum() == checksum;
+    }
+
+    public void setSequenceNumber(char sequenceNumber) {
+        this.sequenceNumber = sequenceNumber;
+    }
+
+    public char getSequenceNumber() {
+        return sequenceNumber;
     }
 }

@@ -76,7 +76,56 @@ public class SelectiveAndRepeatARQ_Receiver {
                 in.readFully(packetData);
                 BISYNCPacket packet = new BISYNCPacket(packetData, true);
 
-                // TODO: Task 3.b, Your code below
+                // Verify packet integrity using checksum
+                if (packet.isValid()) {
+                    // Convert circular sequence number to actual packet index
+                    int actualIndex = packetIndex;
+
+                    // Store the packet if it's within the window
+                    if (!flags[actualIndex]) {
+                        receivedData.set(actualIndex, packet.getData());
+                        flags[actualIndex] = true;
+                        totalPacketsReceived++;
+
+                        // Send ACK for this packet
+                        out.writeByte(ACK);
+                        out.writeChar(packetIndex);
+                        out.flush();
+
+                        // Update window base
+                        while (winBase < N && flags[winBase]) {
+                            winBase++;
+                        }
+
+                        // Check if all packets have been received
+                        if (totalPacketsReceived == N || isLastPacket) {
+                            boolean allReceived = true;
+                            for (boolean flag : flags) {
+                                if (!flag) {
+                                    allReceived = false;
+                                    break;
+                                }
+                            }
+                            if (allReceived) {
+                                running = false;
+                            }
+                        }
+                    } else {
+                        // Duplicate packet, send ACK anyway
+                        out.writeByte(ACK);
+                        out.writeChar(packetIndex);
+                        out.flush();
+                    }
+                } else {
+                    // Packet is corrupted, send NAK if not already sent for this packet
+                    if (!nak_packets.contains((int)packetIndex)) {
+                        out.writeByte(NAK);
+                        out.writeChar(packetIndex);
+                        out.flush();
+                        nak_packets.add((int)packetIndex);
+                    }
+                }
+
 
 
 

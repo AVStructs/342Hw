@@ -53,7 +53,35 @@ public class StopAndWaitARQ_Receiver {
                 in.readFully(packetData);
                 BISYNCPacket packet = new BISYNCPacket(packetData, true);
 
-                // TODO: Task 2.b, Your code below
+                // Verify packet integrity using checksum
+                if (packet.isValid()) {
+                    // If packet is valid:
+                    // 1. Store the packet data
+                    ensureCapacity(packetIndex);
+                    receivedData.set(packetIndex, packet.getData());
+                    totalPacketsReceived++;
+
+                    // 2. Send ACK with next expected sequence number
+                    char nextSeqNum = (char)((packetIndex + 1) % TOTAL_SEQ_NUM);
+                    out.writeByte(ACK);
+                    out.writeChar(nextSeqNum);
+                    out.flush();
+
+                    // Update current packet index
+                    currentPacketIndex = packetIndex;
+
+                    // If this is the last packet, stop the receiver
+                    if (isLastPacket) {
+                        running = false;
+                    }
+                } else {
+                    // If packet is invalid:
+                    // 1. Send NAK with the current sequence number
+                    out.writeByte(NAK);
+                    out.writeChar(packetIndex);
+                    out.flush();
+                }
+
 
 
 

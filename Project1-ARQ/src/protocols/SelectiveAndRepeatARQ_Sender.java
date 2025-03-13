@@ -24,35 +24,73 @@ public class SelectiveAndRepeatARQ_Sender {
     }
 
     public void transmit(List<BISYNCPacket> packets) throws IOException {
-
         // Handshake
         int N = packets.size();
         sender.sendHandshakeRequest(N, winSize);
         char[] response = sender.waitForResponse();
         if(response[0] != ACK) {
             System.out.println("Handshake failed, exit");
-        }else{
+            return;
+        } else {
             System.out.println("Handshake succeed, proceed!");
         }
 
         Boolean finished = false;
+        Set<Integer> unacknowledgedPackets = new HashSet<>();
+        int nextSeqNum = 0;
 
-        // TODO: Task 3.a, Your code below
+        while(!finished) {
+            try {
+                // Send packets within window if available
+                while (nextSeqNum < packets.size() &&
+                        nextSeqNum < winBase + winSize) {
+                    BISYNCPacket packet = packets.get(nextSeqNum);
+                    packet.setSequenceNumber((char)(nextSeqNum % TOTAL_SEQ_NUM));
 
-        while(!finished){
-            //try {
-                // notice: use sender.sendPacketWithLost() to send out packet
-                // but, to resend the lost packet after receiving NAK,
-                // use sender.sendPacket(), otherwise, the receiver may not get the resent packet and get stuck
-                // also, for the last packet, use sender.sendPacket(), otherwise, it will get stuck
+                    // Use sendPacket for last packet, sendPacketWithLost for others
+                    if (nextSeqNum == packets.size() - 1) {
+                        sender.sendPacket(packet);
+                    } else {
+                        sender.sendPacketWithLost(packet);
+                    }
 
+                    unacknowledgedPackets.add(nextSeqNum);
+                    nextSeqNum++;
+                }
 
+                // Wait for response
+                char[] ackResponse = sender.waitForResponse();
+                int receivedSeqNum = ackResponse[1];
 
-            //}catch (IOException e){
-            //    System.err.println("Error transmitting packet: " + e.getMessage());
-            //    return;
-            //}
+                if (ackResponse[0] == ACK) {
+                    // Handle ACK
+                    unacknowledgedPackets.remove(receivedSeqNum);
+
+                    // Slide window if base packet is acknowledged
+                    while (!unacknowledgedPackets.contains(winBase) &&
+                            winBase < packets.size()) {
+                        winBase++;
+                    }
+                } else if (ackResponse[0] == NAK) {
+                    // Handle NAK - resend the specific packet
+                    if (receivedSeqNum < packets.size()) {
+                        BISYNCPacket packet = packets.get(receivedSeqNum);
+                        packet.setSequenceNumber((char)(receivedSeqNum % TOTAL_SEQ_NUM));
+                        sender.sendPacket(packet); // Use sendPacket for retransmission
+                    }
+                }
+
+                // Check if transmission is complete
+                if (winBase >= packets.size() && unacknowledgedPackets.isEmpty()) {
+                    finished = true;
+                }
+
+            } catch (IOException e) {
+                System.err.println("Error transmitting packet: " + e.getMessage());
+                throw e;
+            }
         }
     }
+
 
 }

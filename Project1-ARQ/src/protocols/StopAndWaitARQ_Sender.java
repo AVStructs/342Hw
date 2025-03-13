@@ -13,17 +13,31 @@ public class StopAndWaitARQ_Sender {
         this.currSeqNumber = 0;
     }
 
-    public void transmit(List<BISYNCPacket> packets){
+    public void transmit(List<BISYNCPacket> packets) {
         for (int i = 0; i < packets.size(); i++) {
             BISYNCPacket packet = packets.get(i);
             boolean packetReceived = false;
             boolean isLastPacket = (i == packets.size() - 1);
 
-            // TODO: Task 2.a, Your code below
-            // notice: use sender.sendPacketWithError() to send out packet
+            while (!packetReceived) {
+                // Set the sequence number for the packet
+                packet.setSequenceNumber(currSeqNumber);
 
+                // Send the packet and wait for response
+                sender.sendPacketWithError(packet);
+                byte response = sender.receiveResponse();
+
+                // Check if packet was received correctly
+                if (response == ACK) {
+                    packetReceived = true;
+                    // Update sequence number for next packet
+                    currSeqNumber = (char)((currSeqNumber + 1) % 256);
+                }
+                // If NAK received or response corrupted, retry sending the same packet
+            }
         }
     }
+
 
 
 }
