@@ -117,11 +117,17 @@ public class NetworkSender {
         response[1] = in.readChar(); // ACK number or NAK number
         return response;
     }
-    public byte [] byteResponse() throws IOException {
-        byte[] response = new byte[2];
-        response [0] = in.readByte();
+//    public byte [] byteResponse() throws IOException {
+//        byte[] response = new byte[2];
+//        response [0] = in.readByte();
+//        return response;
+//    }
+    public byte getACK() throws IOException {
+        byte response = in.readByte();
+
         return response;
     }
+
 
     public List<BISYNCPacket> divideIntoPackets(byte[] data) {
         List<BISYNCPacket> packets = new ArrayList<>();
