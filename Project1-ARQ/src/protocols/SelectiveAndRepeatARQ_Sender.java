@@ -51,7 +51,8 @@ public class SelectiveAndRepeatARQ_Sender {
                     if (nextSeqNum == packets.size() - 1) {
                         sender.sendPacket(packet);
                     } else {
-                        sender.sendPacketWithLost(packet);
+                        sender.sendPacketWithLost(packet, 'A', true);
+
                     }
 
                     unacknowledgedPackets.add(nextSeqNum);
