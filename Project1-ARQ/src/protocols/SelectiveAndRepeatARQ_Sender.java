@@ -61,12 +61,10 @@ public class SelectiveAndRepeatARQ_Sender {
 
                 // Wait for response
                 char [] ackResponse = sender.waitForResponse();
-                byte ackRes = sender.getACK();
+                int receivedSeqNum = ackResponse[1];
 
-
-                if (ackRes == ACK) {
+                if (ackResponse[0] == ACK) {
                     // Handle ACK
-
                     unacknowledgedPackets.remove(receivedSeqNum);
 
                     // Slide window if base packet is acknowledged
