@@ -6,10 +6,7 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 public class SelectiveAndRepeatARQ_Receiver {
 
@@ -57,9 +54,7 @@ public class SelectiveAndRepeatARQ_Receiver {
         int winBase = 0;
         System.out.println("Receiver handshake, N: " + N + " winSize: " + winSize);
         Boolean[] flags = new Boolean[N]; // flags[i] indicate whether the packet i has been received
-        for(int i=0; i<N; i++) {
-            flags[i] = false;
-        }
+        Arrays.fill(flags, false);
         ensureCapacity(N);
 
         while(running){
@@ -79,12 +74,11 @@ public class SelectiveAndRepeatARQ_Receiver {
                 // Verify packet integrity using checksum
                 if (packet.isValid()) {
                     // Convert circular sequence number to actual packet index
-                    int actualIndex = packetIndex;
 
                     // Store the packet if it's within the window
-                    if (!flags[actualIndex]) {
-                        receivedData.set(actualIndex, packet.getData());
-                        flags[actualIndex] = true;
+                    if (!flags[packetIndex]) {
+                        receivedData.set(packetIndex, packet.getData());
+                        flags[packetIndex] = true;
                         totalPacketsReceived++;
 
                         // Send ACK for this packet

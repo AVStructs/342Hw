@@ -1,5 +1,6 @@
 package protocols;
 
+import java.io.IOException;
 import java.util.List;
 
 public class StopAndWaitARQ_Sender {
@@ -13,7 +14,8 @@ public class StopAndWaitARQ_Sender {
         this.currSeqNumber = 0;
     }
 
-    public void transmit(List<BISYNCPacket> packets) {
+
+    public void transmit(List<BISYNCPacket> packets) throws IOException {
         for (int i = 0; i < packets.size(); i++) {
             BISYNCPacket packet = packets.get(i);
             boolean packetReceived = false;
@@ -24,16 +26,20 @@ public class StopAndWaitARQ_Sender {
                 packet.setSequenceNumber(currSeqNumber);
 
                 // Send the packet and wait for response
-                sender.sendPacketWithError(packet);
-                byte response = sender.receiveResponse();
+                sender.sendPacketWithError(packet, currSeqNumber, isLastPacket);
+
+                byte [] response = sender.byteResponse();
 
                 // Check if packet was received correctly
-                if (response == ACK) {
+                if (response [0]== ACK) {
                     packetReceived = true;
                     // Update sequence number for next packet
                     currSeqNumber = (char)((currSeqNumber + 1) % 256);
                 }
                 // If NAK received or response corrupted, retry sending the same packet
+                if(response[0] == NAK) {
+                    System.out.println("Sender: NAK received, resending packet " + (int)currSeqNumber);
+                }
             }
         }
     }
