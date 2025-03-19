@@ -66,6 +66,14 @@ public class NetworkSender {
         out.flush();
         return true;
     }
+    public byte[] byteResponse() throws IOException{
+        byte[] response = new byte[2];
+        response[0] = in.readByte();
+        return response;
+
+
+
+    }
 
     // This function is used for Stop-and-wait ARQ
     public boolean sendPacketWithError(BISYNCPacket packet, char packetIndex, boolean isLastPacket) throws IOException {
