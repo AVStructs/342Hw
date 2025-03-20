@@ -1,3 +1,9 @@
+/**
+ * Author: Aiden Vangura, Joshua Blanks
+ * Course: COMP 342 Data Communications and Networking
+ * Date: 03/20/2025
+ *
+ */
 package protocols;
 
 import java.util.ArrayList;
@@ -17,10 +23,21 @@ public class BISYNCPacket {
     public boolean isValid; // whether this is a valid BISYNCPacket
     private char sequenceNumber;
 
+    /**
+     * default constructor for BISYNCPacket class
+     * @param data
+     */
+
     // encapsulation
     public BISYNCPacket(byte[] data) {
         this(data, false); // call the second constructor with stuffed = false
     }
+
+    /**
+     * constructor for BISYNCPacket class
+     * @param data
+     * @param stuffed
+     */
     // encapsulation
     public BISYNCPacket(byte[] data, boolean stuffed) {
         if (!stuffed) { // this is the raw data
@@ -35,12 +52,17 @@ public class BISYNCPacket {
         }
     }
 
+    /**
+     * byteStuff method
+     * @param data
+     * @return
+     */
     private byte[] byteStuff(byte[] data) {
         if (data == null || data.length == 0) {
             return new byte[0];
         }
 
-        // Create a list to store stuffed bytes (dynamic size)
+        // this creates a list to store stuffed bytes (dynamic size)
         ArrayList<Byte> stuffedList = new ArrayList<>();
 
         // Add each byte, stuffing when necessary
@@ -61,7 +83,13 @@ public class BISYNCPacket {
         return stuffed;
     }
 
+    /**
+     * byteUnstuff method
+     * @param stuffedData
+     * @return
+     */
 
+// this method is used to unstuff the data, via the DLE character
     private byte[] byteUnstuff(byte[] stuffedData) {
         if (stuffedData == null || stuffedData.length == 0) {
             return new byte[0];
@@ -93,21 +121,35 @@ public class BISYNCPacket {
         return unstuffed;
     }
 
-
+    /**
+     * createHeader method
+     * @return
+     */
     private byte[] createHeader() {
         // BISYNC header format: SYN SYN STX
         return new byte[]{SYN, SYN, STX};
     }
 
+    /**
+     * getHeader method
+     * @param packet
+     * @return
+     */
+
     private byte[] getHeader(byte[] packet){
-        //
+        //this method is used to get the header of the packet
         byte[] header = new byte[3];
         System.arraycopy(packet, 0, header, 0, header.length);
         return header;
     }
 
+    /**
+     * getTrailerAndSetChecksum method
+     * @param packet
+     * @return
+     */
     private byte[] getTrailerAndSetChecksum(byte[] packet){
-        // last three bytes: ETX + checksum
+        // this uses the last three bytes: ETX + checksum
         byte[] trailer = new byte[3];
         trailer[0] = packet[packet.length - 3];
         trailer[1] = packet[packet.length - 2];
@@ -116,6 +158,10 @@ public class BISYNCPacket {
         checksum = ((trailer[1] & 0xFF) << 8) + (trailer[2] & 0xFF);
         return trailer;
     }
+    /**
+     * createTrailer method
+     * @return
+     */
 
     private byte[] createTrailer() {
         // BISYNC trailer format: ETX + Checksum
@@ -125,7 +171,10 @@ public class BISYNCPacket {
         trailer[2] = (byte) (checksum & 0xFF);
         return trailer;
     }
-
+    /**
+     * calculateChecksum method
+     * @return
+     */
     private int calculateChecksum() {
         // Calculate checksum on stuffed data
         long sum = 0;
@@ -149,7 +198,10 @@ public class BISYNCPacket {
         // Take one's complement
         return (int) (~sum & 0xFFFF);
     }
-
+    /**
+     * getPacket method
+     * @return
+     */
     public byte[] getPacket() {
         byte[] packet = new byte[header.length + stuffedData.length + trailer.length];
         System.arraycopy(header, 0, packet, 0, header.length);
@@ -158,10 +210,20 @@ public class BISYNCPacket {
         return packet;
     }
 
+    /**
+     * getData method
+     * @return
+     */
+
     public byte[] getData() {
         return originalData;
     }
 
+    /**
+     * fromPacket method
+     * @param packet
+     * @return
+     */
     // generate a new BISYNCPacket from a new packet received by the receiver
     public boolean fromPacket(byte[] packet) {
         // Verify minimum packet size
@@ -169,41 +231,55 @@ public class BISYNCPacket {
             throw new IllegalArgumentException("Packet too small");
         }
 
-        // Verify header
+        // Verifies the header
         if (packet[0] != SYN || packet[1] != SYN || packet[2] != STX) {
             // throw new IllegalArgumentException("Invalid header");
             return false;
         }
         this.header = getHeader(packet);
 
-        // Verify trailer
+        //checks the trailer
         if(packet[packet.length - 3] != ETX){
             // throw new IllegalArgumentException("Invalid trailer");
             return false;
         }
         this.trailer = getTrailerAndSetChecksum(packet);
 
-        // Extract stuffed data
+        // pulls and extracts the stuffed data
         byte[] stuffedData = new byte[packet.length - 6];
         System.arraycopy(packet, 3, stuffedData, 0, packet.length - 6);
         this.stuffedData = stuffedData;
 
-        // Get original data
+        // this gets original data
         byte[] unstuffedData = byteUnstuff(stuffedData);
         this.originalData = unstuffedData;
 
-        // Create new packet with unstuffed data
+        // create new packet with unstuffed data
         return isValid();
     }
+
+    /**
+     *  isValid method
+     * @return
+     */
 
     public boolean isValid() {
         return calculateChecksum() == checksum;
     }
+    /**
+     * setSequenceNumber method
+     * @param sequenceNumber
+     */
 
     public void setSequenceNumber(char sequenceNumber) {
         this.sequenceNumber = sequenceNumber;
     }
 
+    /**
+     * getSequenceNumber method
+     * @return
+     */
+    // no current usages
     public char getSequenceNumber() {
         return sequenceNumber;
     }

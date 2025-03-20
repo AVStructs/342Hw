@@ -1,3 +1,9 @@
+/**
+ * Author: Aiden Vangura, Joshua Blanks
+ * Course: COMP 342 Data Communications and Networking
+ * Date: 03/20/2025
+ *
+ */
 package protocols;
 
 
@@ -5,6 +11,18 @@ import java.io.IOException;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+/**
+ * this is the sender for Selective-and-Repeat ARQ protocol
+ * This sender uses a sliding window to send packets and receive ACKs/NAKs
+ * It uses a set to store unacknowledged packets and a window base to track the window
+ * The use of window base is to slide the window when the base packet is acknowledged
+ * The sender sends packets within the window and waits for ACKs/NAKs
+ * If an ACK is received, the sender slides the window
+ * If a NAK is received, the sender resends the specific packet
+ * The sender stops when all packets are acknowledged
+ * The sender uses sendPacketWithLost for packet loss simulation
+ */
 
 public class SelectiveAndRepeatARQ_Sender {
 
@@ -16,6 +34,12 @@ public class SelectiveAndRepeatARQ_Sender {
     private int winBase = 0;
     private int winSize = 0;
 
+    /**
+     * Default Constructor
+     * @param sender
+     * @param winSize
+     */
+
     public SelectiveAndRepeatARQ_Sender(NetworkSender sender, int winSize){
         this.sender = sender;
         // Sliding window
@@ -23,6 +47,15 @@ public class SelectiveAndRepeatARQ_Sender {
         this.winSize = winSize;
     }
 
+    /**
+     * Transmit packets using Selective-and-Repeat ARQ
+     * The sender sends packets within the window and waits for ACKs/NAKs
+     * If an ACK is received, the sender slides the window
+     * If a NAK is received, the sender resends the specific packet
+     * The sender stops when all packets are acknowledged
+     * @param packets
+     * @throws IOException
+     */
     public void transmit(List<BISYNCPacket> packets) throws IOException {
         // Handshake
         int N = packets.size();
@@ -51,7 +84,9 @@ public class SelectiveAndRepeatARQ_Sender {
                     if (nextSeqNum == packets.size() - 1) {
                         sender.sendPacket(packet);
                     } else {
-                        sender.sendPacketWithLost(packet, 'A', true);
+                        if (!sender.sendPacketWithLost(packet, (char) nextSeqNum, false)) {
+                            System.out.println("Sender: packetIndex " + nextSeqNum + " get lost");
+                        }
 
                     }
 
@@ -60,7 +95,7 @@ public class SelectiveAndRepeatARQ_Sender {
                 }
 
                 // Wait for response
-                char[] ackResponse = sender.waitForResponse();
+                char [] ackResponse = sender.waitForResponse();
                 int receivedSeqNum = ackResponse[1];
 
                 if (ackResponse[0] == ACK) {
